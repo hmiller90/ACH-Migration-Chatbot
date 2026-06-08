@@ -1,755 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WSP ACH Migration Assistant</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WSP ACH Migration Assistant - No API</title>
 <style>
-  :root {
-    --bg: #0f1117;
-    --bg-surface: #181c27;
-    --bg-elevated: #1e2333;
-    --bg-input: #141720;
-    --accent: #2dd4a0;
-    --accent-dim: #1a7f62;
-    --accent-glow: rgba(45, 212, 160, 0.12);
-    --accent-glow-strong: rgba(45, 212, 160, 0.22);
-    --text-primary: #e8eaf0;
-    --text-secondary: #8a90a4;
-    --text-muted: #555c72;
-    --border: rgba(255,255,255,0.07);
-    --border-accent: rgba(45,212,160,0.25);
-    --bot-bubble: #1e2a26;
-    --user-bubble: #1a2840;
-    --font: 'DM Sans', sans-serif;
-    --mono: 'DM Mono', monospace;
-    --radius: 16px;
-    --radius-sm: 10px;
-    --radius-msg: 20px;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  html, body {
-    height: 100%;
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text-primary);
-    font-size: 15px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(45,212,160,0.08), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(45,100,212,0.05), transparent);
-  }
-
-  /* ── Key gate overlay ── */
-  #key-gate {
-    position: fixed; inset: 0; z-index: 100;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(45,212,160,0.08), transparent);
-  }
-
-  .key-card {
-    width: 100%; max-width: 440px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-accent);
-    border-radius: var(--radius);
-    padding: 40px;
-    box-shadow: 0 0 60px rgba(45,212,160,0.08);
-    animation: fadeUp .4s ease both;
-  }
-
-  .key-logo {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 28px;
-  }
-
-  .key-logo .dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
-  }
-
-  .key-logo span {
-    font-size: 13px; font-weight: 500; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--text-secondary);
-  }
-
-  .key-card h1 {
-    font-size: 22px; font-weight: 500; color: var(--text-primary);
-    margin-bottom: 8px; letter-spacing: -0.02em;
-  }
-
-  .key-card p {
-    font-size: 14px; color: var(--text-secondary);
-    margin-bottom: 28px; line-height: 1.6;
-  }
-
-  .key-card label {
-    display: block; font-size: 12px; font-weight: 500;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--text-muted); margin-bottom: 8px;
-  }
-
-  .key-input-wrap {
-    position: relative; margin-bottom: 16px;
-  }
-
-  .key-input-wrap input {
-    width: 100%; padding: 12px 44px 12px 14px;
-    background: var(--bg-input); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); color: var(--text-primary);
-    font-family: var(--mono); font-size: 13px;
-    outline: none; transition: border-color .2s;
-  }
-
-  .key-input-wrap input:focus { border-color: var(--border-accent); }
-
-  .toggle-vis {
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted); font-size: 18px; line-height: 1;
-    padding: 4px;
-  }
-
-  .toggle-vis:hover { color: var(--text-secondary); }
-
-  .key-note {
-    font-size: 12px; color: var(--text-muted);
-    margin-bottom: 24px; line-height: 1.5;
-  }
-
-  .key-note a { color: var(--accent); text-decoration: none; }
-  .key-note a:hover { text-decoration: underline; }
-
-  .btn-primary {
-    width: 100%; padding: 13px;
-    background: var(--accent); border: none; border-radius: var(--radius-sm);
-    color: #051a12; font-family: var(--font); font-size: 15px; font-weight: 500;
-    cursor: pointer; transition: opacity .2s, transform .1s;
-    letter-spacing: -0.01em;
-  }
-
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-primary:active { transform: scale(0.99); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  #key-error {
-    font-size: 13px; color: #f87171;
-    margin-top: 12px; display: none;
-    text-align: center;
-  }
-
-  /* ── Main app ── */
-  #app {
-    width: 100%; max-width: 760px;
-    display: flex; flex-direction: column;
-    height: calc(100vh - 40px); max-height: 840px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
-    animation: fadeUp .4s ease both;
-    display: none;
-  }
-
-  /* ── Header ── */
-  .header {
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 14px;
-    background: var(--bg-elevated);
-    flex-shrink: 0;
-  }
-
-  .header-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: var(--accent-glow-strong);
-    border: 1px solid var(--border-accent);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .header-icon svg { width: 18px; height: 18px; stroke: var(--accent); }
-
-  .header-text { flex: 1; }
-  .header-text h2 { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
-  .header-text p { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
-
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    flex-shrink: 0;
-  }
-
-  /* ── Messages ── */
-  #messages {
-    flex: 1; overflow-y: auto;
-    padding: 24px;
-    display: flex; flex-direction: column; gap: 16px;
-    scroll-behavior: smooth;
-  }
-
-  #messages::-webkit-scrollbar { width: 4px; }
-  #messages::-webkit-scrollbar-track { background: transparent; }
-  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .msg { display: flex; gap: 10px; align-items: flex-end; max-width: 88%; }
-  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-  .msg.bot { align-self: flex-start; }
-
-  .avatar {
-    width: 28px; height: 28px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; flex-shrink: 0; margin-bottom: 2px;
-  }
-
-  .bot .avatar {
-    background: var(--accent-glow-strong);
-    border: 1px solid var(--border-accent);
-    color: var(--accent);
-  }
-
-  .user .avatar {
-    background: rgba(99,148,255,0.15);
-    border: 1px solid rgba(99,148,255,0.25);
-    color: #6394ff;
-  }
-
-  .bubble {
-    padding: 12px 16px;
-    font-size: 14px; line-height: 1.65;
-    white-space: pre-wrap; word-break: break-word;
-  }
-
-  .bot .bubble {
-    background: var(--bot-bubble);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-msg) var(--radius-msg) var(--radius-msg) 4px;
-    color: var(--text-primary);
-  }
-
-  .user .bubble {
-    background: var(--user-bubble);
-    border: 1px solid rgba(99,148,255,0.2);
-    border-radius: var(--radius-msg) var(--radius-msg) 4px var(--radius-msg);
-    color: var(--text-primary);
-  }
-
-  /* typing indicator */
-  .typing-bubble {
-    padding: 14px 18px;
-    background: var(--bot-bubble);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-msg) var(--radius-msg) var(--radius-msg) 4px;
-    display: flex; gap: 5px; align-items: center;
-  }
-
-  .typing-bubble span {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--text-muted);
-    animation: pulse 1.4s infinite ease-in-out;
-  }
-
-  .typing-bubble span:nth-child(2) { animation-delay: .2s; }
-  .typing-bubble span:nth-child(3) { animation-delay: .4s; }
-
-  @keyframes pulse {
-    0%, 60%, 100% { opacity: .3; transform: scale(1); }
-    30% { opacity: 1; transform: scale(1.3); }
-  }
-
-  /* ── Chips ── */
-  #chips-wrap {
-    padding: 0 24px 16px;
-    display: flex; flex-wrap: wrap; gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .chip {
-    padding: 7px 14px;
-    font-size: 13px; font-family: var(--font);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    color: var(--text-secondary);
-    cursor: pointer; transition: all .18s;
-    white-space: nowrap;
-  }
-
-  .chip:hover {
-    border-color: var(--border-accent);
-    color: var(--accent);
-    background: var(--accent-glow);
-  }
-
-  /* ── Input bar ── */
-  .input-bar {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border);
-    display: flex; gap: 10px; align-items: flex-end;
-    background: var(--bg-elevated);
-    flex-shrink: 0;
-  }
-
-  #user-input {
-    flex: 1;
-    padding: 11px 16px;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-family: var(--font); font-size: 14px;
-    resize: none; outline: none;
-    min-height: 44px; max-height: 120px;
-    line-height: 1.5; transition: border-color .2s;
-  }
-
-  #user-input::placeholder { color: var(--text-muted); }
-  #user-input:focus { border-color: var(--border-accent); }
-
-  #send-btn {
-    width: 44px; height: 44px; border-radius: var(--radius-sm);
-    background: var(--accent); border: none;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0;
-    transition: opacity .2s, transform .1s;
-  }
-
-  #send-btn:hover { opacity: 0.88; }
-  #send-btn:active { transform: scale(0.95); }
-  #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  #send-btn svg { width: 18px; height: 18px; stroke: #051a12; fill: none; }
-
-  /* ── Footer ── */
-  .footer {
-    padding: 10px 24px;
-    border-top: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;
-  }
-
-  .footer-left {
-    font-size: 11px; color: var(--text-muted); letter-spacing: 0.03em;
-  }
-
-  .footer-left strong { color: var(--text-secondary); font-weight: 500; }
-
-  .clear-btn {
-    font-size: 11px; color: var(--text-muted);
-    background: none; border: none; cursor: pointer;
-    font-family: var(--font); letter-spacing: 0.03em;
-    padding: 4px 8px; border-radius: 6px; transition: all .15s;
-  }
-
-  .clear-btn:hover { color: var(--text-secondary); background: var(--border); }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @media (max-width: 600px) {
-    body { padding: 0; }
-    #app { border-radius: 0; height: 100vh; max-height: none; border: none; }
-    .msg { max-width: 95%; }
-    #chips-wrap { padding: 0 16px 12px; }
-    #messages { padding: 16px; }
-    .header { padding: 14px 16px; }
-    .input-bar { padding: 12px 16px; }
-  }
-</style>
-<style>
-  #app { display: flex; }
-  .source-note { font-size: 11px; color: var(--text-muted); margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
-  .bot .bubble ul { padding-left: 18px; margin: 6px 0; }
+:root{--bg:#0f1117;--surface:#181c27;--elev:#1e2333;--input:#141720;--accent:#2dd4a0;--text:#e8eaf0;--muted:#8a90a4;--border:rgba(255,255,255,.09);--bot:#1e2a26;--user:#1a2840}*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}body{display:flex;align-items:center;justify-content:center;padding:20px;background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(45,212,160,.08),transparent)}#app{width:100%;max-width:820px;height:calc(100vh - 40px);max-height:880px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.45)}.header{padding:18px 24px;border-bottom:1px solid var(--border);background:var(--elev);display:flex;gap:14px;align-items:center}.icon{width:38px;height:38px;border-radius:10px;background:rgba(45,212,160,.16);border:1px solid rgba(45,212,160,.25);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:bold}.header h1{font-size:16px;margin:0 0 2px;font-weight:600}.header p{font-size:12px;margin:0;color:var(--muted)}#messages{flex:1;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px}.msg{display:flex;gap:10px;max-width:90%;align-items:flex-end}.msg.user{align-self:flex-end;flex-direction:row-reverse}.msg.bot{align-self:flex-start}.avatar{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}.bot .avatar{background:rgba(45,212,160,.16);border:1px solid rgba(45,212,160,.25);color:var(--accent)}.user .avatar{background:rgba(99,148,255,.15);border:1px solid rgba(99,148,255,.25);color:#80a7ff}.bubble{padding:12px 16px;border-radius:20px;line-height:1.6;font-size:14px;white-space:pre-wrap;word-break:break-word}.bot .bubble{background:var(--bot);border:1px solid var(--border);border-bottom-left-radius:4px}.user .bubble{background:var(--user);border:1px solid rgba(99,148,255,.2);border-bottom-right-radius:4px}#chips{padding:0 24px 16px;display:flex;flex-wrap:wrap;gap:8px}.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--elev);color:var(--muted);cursor:pointer;font-size:13px}.chip:hover{border-color:rgba(45,212,160,.35);color:var(--accent)}.input{padding:16px 20px;border-top:1px solid var(--border);background:var(--elev);display:flex;gap:10px;align-items:flex-end}#user-input{flex:1;min-height:44px;max-height:120px;resize:none;border-radius:10px;border:1px solid var(--border);background:var(--input);color:var(--text);font:14px Arial,Helvetica,sans-serif;padding:12px 14px;outline:none;line-height:1.45}#user-input:focus{border-color:rgba(45,212,160,.35)}#send-btn{width:44px;height:44px;border:0;border-radius:10px;background:var(--accent);color:#061a13;font-weight:bold;cursor:pointer}.footer{padding:10px 24px;border-top:1px solid var(--border);font-size:11px;color:#666;display:flex;justify-content:space-between}.clear{background:none;border:none;color:#777;cursor:pointer}@media(max-width:600px){body{padding:0}#app{height:100vh;max-height:none;border-radius:0;border:0}.header,.input{padding:14px 16px}#messages{padding:16px}#chips{padding:0 16px 12px}.msg{max-width:96%}}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="header">
-    <div class="header-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2"/>
-        <path d="M2 10h20M6 15h4"/>
-      </svg>
-    </div>
-    <div class="header-text">
-      <h2>ACH Migration Assistant</h2>
-      <p>API-free static FAQ · HubSpot Payments · Authorize.net Returns Data</p>
-    </div>
-    <div class="status-dot" title="Ready"></div>
+  <div class="header"><div class="icon">✦</div><div><h1>ACH Migration Assistant</h1><p>No API key required · Local knowledge-base responses</p></div></div>
+  <div id="messages"></div>
+  <div id="chips">
+    <button class="chip" type="button">What are our current return rates?</button>
+    <button class="chip" type="button">Most common return code?</button>
+    <button class="chip" type="button">How does failed payment recovery work?</button>
+    <button class="chip" type="button">How much have we failed to collect?</button>
+    <button class="chip" type="button">Active students with payment issues?</button>
+    <button class="chip" type="button">What happens if we do nothing?</button>
   </div>
-
-  <div id="messages">
-    <div class="msg bot">
-      <div class="avatar">✦</div>
-      <div class="bubble">Hi — I'm the WSP ACH Migration Assistant. This API-free version answers from the embedded migration FAQ and Authorize.net eCheck returns dataset. It works as a static HTML file, so no API key is required.
-
-Because there is no live AI model connected, answers are generated through keyword matching and knowledge-base lookup rather than open-ended reasoning.</div>
-    </div>
-  </div>
-
-  <div id="chips-wrap">
-    <button class="chip" onclick="sendChip(this)">What are our current return rates?</button>
-    <button class="chip" onclick="sendChip(this)">Most common return code?</button>
-    <button class="chip" onclick="sendChip(this)">How does failed payment recovery work?</button>
-    <button class="chip" onclick="sendChip(this)">How much have we failed to collect?</button>
-    <button class="chip" onclick="sendChip(this)">Active students with payment issues?</button>
-    <button class="chip" onclick="sendChip(this)">What happens if we do nothing?</button>
-  </div>
-
-  <div class="input-bar">
-    <textarea id="user-input" placeholder="Ask about the migration or returns data…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button id="send-btn" onclick="send()" title="Send">
-      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-      </svg>
-    </button>
-  </div>
-
-  <div class="footer">
-    <div class="footer-left">Static HTML · <strong>No API key required</strong> · Knowledge base embedded locally</div>
-    <button class="clear-btn" onclick="clearChat()">Clear chat</button>
-  </div>
+  <div class="input"><textarea id="user-input" rows="1" placeholder="Ask about the ACH migration or returns data…"></textarea><button id="send-btn" type="button">Send</button></div>
+  <div class="footer"><span>Powered locally · Knowledge base: WSP internal</span><button class="clear" id="clear-btn" type="button">Clear chat</button></div>
 </div>
-
 <script>
-const KNOWLEDGE = `You are a helpful internal assistant for Wall Street Prep (WSP), a finance education company. Answer questions based strictly on the knowledge base below. Be concise, accurate, and professional. When citing numbers, be precise. If a question isn't covered in the knowledge base, say so clearly rather than guessing.
-
-KNOWLEDGE BASE:
-
-=== MIGRATION FAQ ===
-
-WHY MIGRATE FROM AUTHORIZE.NET TO HUBSPOT PAYMENTS?
-Our ACH return rates are significantly above NACHA-recommended thresholds, creating compliance, operational, and processor risk. The migration improves visibility, monitoring, reporting, and payment recovery workflows while reducing manual administrative burden.
-
-ARE WE REPLACING ALL PAYMENT PROCESSING?
-No. The proposal: continue using SamCart for credit card transactions. Use HubSpot Payments exclusively for ACH transactions. This lets us maintain card-payment workflows while improving ACH operations. SamCart transactions sync to HubSpot as Deals. With HubSpot Payments, the first ACH transaction becomes a Deal; all subsequent transactions appear as individual payments within a Subscription object.
-
-WHY NOT CONTINUE USING AUTHORIZE.NET?
-Authorize.net requires: dedicated ACH monitoring, manual reconciliation, external reporting processes, and additional compliance oversight. It is only viable if significant new controls and staffing are added.
-
-WHAT HAPPENS IF WE DO NOTHING?
-Potential consequences: processor reviews, reserve requirements, funding delays, ACH volume restrictions, mandatory remediation plans, ACH processing termination, sponsoring bank escalation. Risks increase as return rates remain elevated.
-
-WHAT ARE OUR CURRENT ACH RETURN RATES (NACHA THRESHOLDS IN PARENTHESES)?
-- Overall Return Rate: 18.87% (threshold: 15%) — EXCEEDS
-- Last 30 Days: 30.95% (threshold: 15%) — SEVERELY EXCEEDS
-- Unauthorized Returns: ~5.88% (threshold: 0.5%) — SEVERELY EXCEEDS
-- Administrative Returns: ~8.82% (threshold: 3%) — EXCEEDS
-
-WHY ARE ADMINISTRATIVE RETURNS A CONCERN?
-Administrative returns include R02 (Account Closed), R03 (No Account/Unable to Locate), R04 (Invalid Account Number), R20 (Non-Transaction Account). These indicate poor account validation. We have failed to collect over $283,000 due to Authorize.net's shortcomings. The single largest return category is R01 — Insufficient Funds.
-
-WHAT DOES HUBSPOT PAYMENTS SOLVE?
-Centralizes ACH payment records, customer records, failed payment notifications, reporting, and workflow automation. Eliminates all manual tracking and importing that Enrollment Advisors currently do.
-
-BIGGEST OPERATIONAL BENEFIT?
-Everything is fully automated inside HubSpot. Staff can send payment links, view payment status, track failed payments, review customer payment history, and generate reports — without logging into multiple systems.
-
-WILL ACH COST MORE WITH HUBSPOT?
-For smaller transactions, HubSpot ACH fees may be slightly higher than Authorize.net. For larger transactions, ACH fee caps become advantageous, gateway fees are eliminated, and operational costs decrease. Primary savings are operational, not transactional.
-
-WHAT HAPPENS TO EXISTING ACH CUSTOMERS?
-They can remain on current arrangements during transition. Recommendation: move new ACH originations to HubSpot first, validate processes, then gradually sunset Authorize.net ACH processing.
-
-HOW DOES ACH AUTHORIZATION WORK?
-HubSpot automatically captures customer authorization during checkout. ACH payments are hosted by Stripe, providing documentation of customer authorization to satisfy NACHA compliance requirements. Everything is automatically documented — no additional steps needed.
-
-IS HUBSPOT PAYMENTS NACHA COMPLIANT?
-Yes. Built on Stripe's payment infrastructure, following ACH processing requirements including authorization and transaction handling standards.
-
-IS CUSTOMER BANKING INFORMATION STORED BY US?
-No. Banking information is securely collected and stored by Stripe. Our staff has no direct access to customer bank account details.
-
-WHAT HAPPENS WHEN AN ACH PAYMENT FAILS?
-1. Customer automatically receives an email with a link to update their payment information.
-2. Subscription Status changes to "past due"; Payment Status changes to "failed."
-3. HubSpot does NOT auto-retry on a fixed dunning schedule.
-4. HubSpot "listens" for payment info updates — fires authorization request the moment a customer updates their banking info.
-5. Any past-due balances are immediately charged to the updated payment method.
-6. Status stays "unpaid" / "processing" until settlement (3–5 days), then returns to "active" / "successful."
-7. Staff can manually retry or send a payment update email from the Subscriptions card on the contact record.
-
-WILL A FAILED PAYMENT CANCEL THE SUBSCRIPTION?
-No. Subscription status and enrollment status are managed separately. A failed payment can trigger outreach, retry attempts, enrollment holds, or internal review — without canceling the subscription or program access.
-
-HOW WILL ADVISORS HANDLE FAILED PAYMENTS?
-HubSpot provides visibility directly in the CRM. Users can toggle on/off notifications for failed/past-due payments.
-
-For SamCart payments:
-- Static segment already created: "SamCart - Delinquent Subscriptions"
-- Global Rule already created in SamCart app: adds delinquent users to that list (Trigger: Subscription Delinquent)
-- Workflow: Trigger = segment membership. Step 1: create task for Contact Owner. Step 2: delay up to 30 days until number of associated deals increases. Step 3: remove from list.
-
-For ACH payments (subscription-based workflow):
-- Trigger: Subscription associated to any payment AND Payment Status = Failed
-- Step 1: Rotate subscription owner
-- Step 2: Delay 8 business days
-- Step 3: If/then branch — Branch 1 (payment processing: wait up to 5 days for failed or successful), Branch 2 (still unpaid: continue workflow), Branch 3 (resolved: unenroll)
-- Step 4: Create task for Subscription Owner (associated with subscription's contact)
-- Steps 5–10: Repeat cycle two more times
-
-ACH DISPUTES AND CHARGEBACKS:
-HubSpot surfaces dispute events within payment records. Key unauthorized return codes: R07 (Authorization Revoked), R10 (Customer Advises Unauthorized), R29 (Corporate Customer Advises Not Authorized). These contribute to NACHA unauthorized return rate thresholds and must be reviewed immediately.
-Recommended: designate leadership member for disputes; enable email notifications under Settings > Notifications > Payments (Counterable dispute created, Dispute lost, Dispute won, Uncounterable dispute created).
-IMPORTANT: ACH disputes CANNOT be challenged — they are lost by default.
-Consider a task-creation workflow for all disputed transactions so the information routes directly to the contact record.
-
-WILL HUBSPOT REDUCE RETURN RATES?
-HubSpot improves visibility, reporting, workflow automation, payment recovery, customer communication, and exception management. When customers use the "select your bank and sign in with Stripe" option (Stripe Financial Connections), invalid account errors are completely eliminated — this accounts for roughly 25% of our return error codes. Manual bank entry still carries invalid account risk. Sustained improvement also requires: active monitoring, better account validation, controlled retry policies, and defined ACH processes.
-
-HOW WILL REFUNDS WORK?
-Refunds can be issued directly through HubSpot. The Enrollment Team (once granted proper permissions) can locate the payment record and issue a partial or full refund. Activity is automatically recorded in HubSpot.
-
-WILL WE STILL NEED AUTHORIZE.NET AFTER MIGRATION?
-Only if maintaining legacy ACH processing. Once all new ACH transactions move to HubSpot and historical transactions have fully settled, Authorize.net may no longer be needed for ACH. A separate decision would need to be made regarding any remaining uses.
-
-=== AUTHORIZE.NET ECHECK RETURNS DATA ===
-
-OVERALL STATISTICS (1/4/24 – 5/12/26):
-- Total Authorize.net ACH Transactions: 832
-- Returned Transactions: 157 → 18.87% return rate (NACHA threshold: 15%)
-- Returned Items: 139 (16.71%)
-- Chargebacks: 18 (2.16%; NACHA threshold: 0.5%)
-
-ALL-TIME STATISTICS:
-- Total Transactions: 1,301
-- Returned: 178 (13.68%)
-- Returned Items: 157 (12.07%)
-- Chargebacks: 21 (1.61%)
-
-LAST 30 DAYS (4/1/26 – 5/1/26):
-- Total: 42 transactions
-- Returned: 13 (30.95% — extremely elevated)
-- Returned Items: 10 (23.81%)
-- Chargebacks: 3 (7.14%)
-
-SAMCART VS. AUTHORIZE.NET (1/4/24 – 5/12/26):
-- Total transactions across both systems: 25,289
-- SamCart: 24,457 (96.71%)
-- Authorize.net: 832 (3.29%)
-- Authorize.net transactions that collected funds: 675 (only 81.1%)
-
-ALL-TIME SCALE:
-- Total: 29,248; SamCart: 27,947 (95.55%); Authorize.net: 1,301 (4.45%)
-- Authorize.net funds actually collected: 1,123 (86.3%)
-
-RETURN CODE BREAKDOWN (all-time, 178 returns):
-- R01 Insufficient Funds: 111 (62.36%) — largest category
-- R02 Account Closed: 13 (7.30%)
-- R03 No Account/Unable to Locate: 23 (12.92%)
-- R04 Invalid Account Number: 4 (2.25%)
-- R07 Auth Revoked by Customer: 1 (0.56%)
-- R08 Payment Stopped by Customer: 5 (2.81%)
-- R10 Customer Advises Not Authorized: 1 (0.56%)
-- R16 Account Frozen: 4 (2.25%)
-- R20 Non-Transaction Account: 2 (1.12%)
-- R29 Corporate Customer Advises Not Authorized: 14 (7.87%)
-
-RETURN FEES (all-time):
-- Return transaction fee: $3 × 179 = $537
-- Chargeback fee: $25 × 21 = $525
-- Grand total fees paid: $1,062
-
-RETURNS BY PROGRAM:
-Wharton (135 recorded returns):
-- 2023: 22 (Spring PE: 8, Fall PE: 14)
-- 2024: 29 (Winter PE: 3, Spring: 7 PE + 5 RE, Fall: 7 RE + 3 FPA + 3 AVI/BS)
-- 2025: 63 (Winter: 8 PE + 1 RE + 5 FPA; Spring: 9 PE + 3 RE + 5 FPA + 9 AVI; Fall: 7 PE + 10 RE + 5 FPA + 1 AVI)
-- 2026: 21 (Winter: 6 PE + 5 RE + 1 FPA + 1 AVI; Spring: 2 PE + 1 RE + 1 FPA + 1 AVI + 3 RDI)
-
-Columbia (16 recorded returns):
-- 2025 Summer AIFB: 9; 2025 Fall AIFB: 6; 2026 Spring AIFB: 1
-
-ACTIVE/URGENT CASES (enrolled students with unresolved payment failures):
-- t.bienemy@yahoo.com: 2026 Spring PE ($4,800 R01) and Spring FPA ($4,800 R01) — Active/Upcoming
-- dr.chaudharyniket@gmail.com: 2026 Spring RDI ($4,800 R01) and Spring PE ($4,800 R29 chargeback) — Active/Upcoming
-- lconyers@conyerscapitalmanagement.org: 2026 Spring RDI — 3 separate failures, still has upcoming payments — Active/Upcoming
-- sappmaggiel380@gmail.com: 2026 Spring RDI ($4,800 R16 Account Frozen) — Active/Upcoming
-- keoamnart54@gmail.com: 2026 Spring RE ($4,800 R03 No Account) — Active/Upcoming
-- roxysurfbabee@icloud.com: 2026 Winter RE — 5/5 payments failed via R29 chargeback (serial unauthorized claims), now in 2nd attempt
-- marydwar@gmail.com: 2025 Fall AIFB ($1,000 R01) — Active/2nd Attempt
-- t.bienemy@yahoo.com: Two separate programs both failed, both Active/Upcoming
-- nathanberry@live.com: 2026 Winter FPA and Winter PE ($5,000 each, R01) — Active/Grading
-- trellb969@gmail.com: 2026 Winter PE ($5,000 R16 Account Frozen) — Active/Grading; deferred from W25
-- kirk12475@gmail.com: 2026 Spring RDI ($960 R10 Customer Advises Not Authorized) — Active/Upcoming; 4 more payments scheduled
-- lmorr04072014@gmail.com: 2026 Spring PE ($4,800 R01) — Active/Upcoming
-
-NO HUBSPOT RECORD CASES:
-~15–18 transactions totaling approximately $34,700 have returns but no corresponding HubSpot contact record — invisible in the CRM.
-
-AUTHORIZE.NET SYSTEM NOTES:
-- No automatic notification when eCheck returned for insufficient funds — must check manually
-- Reports: Account > Statements > eCheck OR Reports > Returns > by settlement date > settled returns
-- Reports can go back up to 5 years; can pull within 90-day window
-- Settlement occurs each business day (excluding holidays)
-- Settlement date begins 7-business-day funds holding period
-- Funds availability is NOT verified in real time
-- HubSpot report for all failed ACH transactions: https://app.hubspot.com/contacts/21335947/objectLists/8693/filters`;
-let history = [];
-
-const ANSWERS = [
-  { keys: ['current return rate','return rates','nacha threshold','overall return'], answer: `Current ACH return rates (1/4/24–5/12/26):
-
-• Overall Return Rate: 18.87% vs. NACHA threshold of 15% — exceeds threshold
-• Last 30 Days: 30.95% vs. threshold of 15% — severely exceeds threshold
-• Unauthorized Returns: ~5.88% vs. threshold of 0.5% — severely exceeds threshold
-• Administrative Returns: ~8.82% vs. threshold of 3% — exceeds threshold
-
-The data indicates elevated compliance and processor risk, especially because recent returns are materially worse than the full-period average.` },
-  { keys: ['most common return code','largest return category','r01','insufficient funds'], answer: `The most common return code is R01 — Insufficient Funds.
-
-All-time return code breakdown shows 111 R01 returns out of 178 total returns, or 62.36% of all returns. This makes insufficient funds the largest return category by a wide margin.` },
-  { keys: ['failed payment recovery','payment fail','payment fails','past due','retry','dunning'], answer: `When an ACH payment fails in HubSpot Payments:
-
-1. The customer automatically receives an email with a link to update payment information.
-2. Subscription Status changes to “past due”; Payment Status changes to “failed.”
-3. HubSpot does not automatically retry payments on a fixed dunning schedule.
-4. HubSpot listens for updated payment information. Once the customer updates banking details, HubSpot fires the authorization request.
-5. Past-due balances are charged to the updated payment method.
-6. Status remains “unpaid” / “processing” until settlement, usually 3–5 days, then returns to “active” / “successful.”
-7. Staff can also manually retry or send a payment update email from the Subscriptions card.` },
-  { keys: ['failed to collect','not collected','how much','283','shortcomings'], answer: `The knowledge base states that WSP has failed to collect over $283,000 due to Authorize.net’s shortcomings.
-
-It also notes that roughly 15–18 returned transactions totaling approximately $34,700 have no corresponding HubSpot contact record, making those cases invisible in the CRM.` },
-  { keys: ['active students','urgent cases','payment issues','unresolved','active upcoming'], answer: `Active or urgent unresolved payment cases listed in the knowledge base include:
-
-• t.bienemy@yahoo.com — Spring PE and Spring FPA failures, both Active/Upcoming
-• dr.chaudharyniket@gmail.com — Spring RDI and Spring PE failures, including R29 chargeback
-• lconyers@conyerscapitalmanagement.org — Spring RDI, 3 separate failures, upcoming payments remain
-• sappmaggiel380@gmail.com — Spring RDI, R16 Account Frozen
-• keoamnart54@gmail.com — Spring RE, R03 No Account
-• roxysurfbabee@icloud.com — Winter RE, 5/5 payments failed via R29 chargeback
-• marydwar@gmail.com — Fall AIFB, Active/2nd Attempt
-• nathanberry@live.com — Winter FPA and PE, R01 failures
-• trellb969@gmail.com — Winter PE, R16 Account Frozen
-• kirk12475@gmail.com — Spring RDI, R10 unauthorized claim, 4 more payments scheduled
-• lmorr04072014@gmail.com — Spring PE, R01 failure` },
-  { keys: ['what happens if we do nothing','do nothing','risks','processor review','reserve'], answer: `If WSP does nothing, the knowledge base identifies these potential consequences:
-
-• Processor reviews
-• Reserve requirements
-• Funding delays
-• ACH volume restrictions
-• Mandatory remediation plans
-• ACH processing termination
-• Sponsoring bank escalation
-
-The risk increases as return rates remain elevated, especially because current rates exceed NACHA thresholds.` },
-  { keys: ['why migrate','migration rationale','why hubspot','why migrate from authorize'], answer: `The migration rationale is that WSP’s ACH return rates are above NACHA-recommended thresholds, creating compliance, operational, and processor risk.
-
-Moving ACH to HubSpot Payments should improve visibility, monitoring, reporting, payment recovery workflows, and reduce manual administrative work. The proposal keeps SamCart for credit cards and uses HubSpot Payments only for ACH transactions.` },
-  { keys: ['authorize.net','continue using authorize','why not continue','why not authorize'], answer: `Continuing with Authorize.net is only viable if WSP adds significant new controls and staffing.
-
-Authorize.net requires dedicated ACH monitoring, manual reconciliation, external reporting processes, and additional compliance oversight. The knowledge base also notes that Authorize.net does not automatically notify staff when an eCheck is returned for insufficient funds.` },
-  { keys: ['nacha compliant','authorization','banking information','stripe','stored'], answer: `HubSpot Payments captures ACH authorization during checkout and uses Stripe infrastructure for ACH processing. Banking information is collected and stored securely by Stripe, not by WSP, and WSP staff do not have direct access to customer bank account details.` },
-  { keys: ['chargeback','dispute','unauthorized','r07','r10','r29'], answer: `ACH disputes and unauthorized returns require immediate review. Key unauthorized return codes include:
-
-• R07 — Authorization Revoked
-• R10 — Customer Advises Unauthorized
-• R29 — Corporate Customer Advises Not Authorized
-
-The knowledge base notes that ACH disputes cannot be challenged and are lost by default. Recommended actions include designating a leadership owner for disputes, enabling payment dispute notifications, and creating tasks for disputed transactions.` },
-  { keys: ['refund','refunds'], answer: `Refunds can be issued directly through HubSpot. Once the Enrollment Team has proper permissions, staff can locate the payment record and issue a partial or full refund. The refund activity is automatically recorded in HubSpot.` },
-  { keys: ['samcart','credit card','card payments','all payment processing'], answer: `The proposal does not replace all payment processing. WSP would continue using SamCart for credit card transactions and use HubSpot Payments exclusively for ACH. SamCart transactions sync to HubSpot as Deals; with HubSpot Payments, the first ACH transaction becomes a Deal and later transactions appear as individual payments within a Subscription object.` },
-  { keys: ['cost','fees','ach cost','hubspot cost','more expensive'], answer: `HubSpot ACH may cost slightly more than Authorize.net for smaller transactions, but for larger transactions ACH fee caps can be advantageous. Gateway fees are eliminated, and the main savings are expected to come from reduced operational burden rather than transaction fees alone.` }
+(function(){
+'use strict';
+var KB = [
+{keys:['return rate','return rates','nacha','threshold','current'],answer:'Current ACH return rates from the knowledge base:\n\n• Overall Return Rate: 18.87% vs. NACHA threshold of 15% — exceeds threshold\n• Last 30 Days: 30.95% vs. 15% — severely exceeds threshold\n• Unauthorized Returns: approximately 5.88% vs. 0.5% — severely exceeds threshold\n• Administrative Returns: approximately 8.82% vs. 3% — exceeds threshold\n\nFor 1/4/24–5/12/26, there were 832 Authorize.net ACH transactions and 157 returned transactions.'},
+{keys:['most common','largest','r01','insufficient funds','return code'],answer:'The most common return code is R01 — Insufficient Funds. All-time, R01 accounts for 111 of 178 returns, or 62.36% of all returns.\n\nOther notable return codes include R03 No Account/Unable to Locate at 23 returns, R29 Corporate Customer Advises Not Authorized at 14 returns, and R02 Account Closed at 13 returns.'},
+{keys:['failed payment','recovery','past due','retry','dunning','subscription fails','payment fail'],answer:'When an ACH payment fails in HubSpot Payments:\n\n1. The customer automatically receives an email with a link to update payment information.\n2. Subscription Status changes to “past due” and Payment Status changes to “failed.”\n3. HubSpot does not auto-retry on a fixed dunning schedule.\n4. HubSpot listens for payment information updates and fires an authorization request once banking information is updated.\n5. Past-due balances are immediately charged to the updated payment method.\n6. Status remains unpaid/processing until settlement, typically 3–5 days, then returns to active/successful.\n7. Staff can manually retry or send a payment update email from the Subscriptions card.'},
+{keys:['failed to collect','uncollected','how much','shortcomings','money'],answer:'The knowledge base states that WSP has failed to collect over $283,000 due to Authorize.net ACH shortcomings.\n\nIt also notes that approximately 15–18 returned transactions totaling about $34,700 have no corresponding HubSpot contact record, making them invisible in the CRM.'},
+{keys:['active','urgent','students','payment issues','unresolved','upcoming','grading'],answer:'Active or urgent unresolved payment cases listed in the knowledge base include:\n\n• t.bienemy@yahoo.com — Spring PE and Spring FPA failures, both Active/Upcoming\n• dr.chaudharyniket@gmail.com — Spring RDI R01 and Spring PE R29 chargeback\n• lconyers@conyerscapitalmanagement.org — Spring RDI, 3 separate failures with upcoming payments\n• sappmaggiel380@gmail.com — Spring RDI, R16 Account Frozen\n• keoamnart54@gmail.com — Spring RE, R03 No Account\n• roxysurfbabee@icloud.com — Winter RE, 5/5 payments failed via R29 chargeback\n• marydwar@gmail.com — Fall AIFB, Active/2nd Attempt\n• nathanberry@live.com — Winter FPA and PE, Active/Grading\n• trellb969@gmail.com — Winter PE, R16 Account Frozen, Active/Grading\n• kirk12475@gmail.com — Spring RDI, R10 unauthorized, 4 more payments scheduled\n• lmorr04072014@gmail.com — Spring PE, R01, Active/Upcoming'},
+{keys:['do nothing','nothing happens','risk','processor','reserve','termination'],answer:'If WSP does nothing, the knowledge base identifies these risks:\n\n• Processor reviews\n• Reserve requirements\n• Funding delays\n• ACH volume restrictions\n• Mandatory remediation plans\n• ACH processing termination\n• Sponsoring bank escalation\n\nThe risk increases as ACH return rates remain elevated above NACHA thresholds.'},
+{keys:['why migrate','migrate','migration rationale','hubspot payments','why hubspot'],answer:'The migration rationale is that current ACH return rates are above NACHA-recommended thresholds, creating compliance, operational, and processor risk.\n\nHubSpot Payments improves ACH visibility, monitoring, reporting, failed payment workflows, customer communication, and payment recovery while reducing manual administrative burden.'},
+{keys:['replace all','samcart','credit card','card','all payment'],answer:'No — the proposal is not to replace all payment processing. The plan is to continue using SamCart for credit card transactions and use HubSpot Payments exclusively for ACH transactions.\n\nSamCart transactions sync to HubSpot as Deals. With HubSpot Payments, the first ACH transaction becomes a Deal, and subsequent transactions appear as individual payments within a Subscription object.'},
+{keys:['authorize.net','authorize','continue using authorize','why not continue'],answer:'Authorize.net can continue only with significant additional controls. The knowledge base says it requires dedicated ACH monitoring, manual reconciliation, external reporting processes, and additional compliance oversight.\n\nIt also lacks automatic notification when an eCheck is returned for insufficient funds, meaning staff must check manually.'},
+{keys:['cost','fees','fee','ach cost','hubspot cost'],answer:'HubSpot ACH may be slightly more expensive for smaller transactions, but for larger transactions ACH fee caps become advantageous, gateway fees are eliminated, and operational costs decrease.\n\nThe main savings are operational rather than purely transactional.'},
+{keys:['authorization','banking information','nacha compliant','compliance','stripe'],answer:'HubSpot captures customer ACH authorization during checkout. ACH payments are hosted by Stripe, which provides documentation of customer authorization for NACHA compliance.\n\nCustomer banking information is not stored by WSP. It is securely collected and stored by Stripe, and staff do not have direct access to customer bank account details.'},
+{keys:['dispute','chargeback','r07','r10','r29','unauthorized'],answer:'ACH dispute and chargeback notes:\n\n• HubSpot surfaces dispute events within payment records.\n• Key unauthorized return codes are R07, R10, and R29.\n• These count toward NACHA unauthorized return thresholds and should be reviewed immediately.\n• ACH disputes cannot be challenged and are lost by default.\n• Recommended setup: designate a leadership owner for disputes and enable payment dispute email notifications in HubSpot.'},
+{keys:['refund','refunds'],answer:'Refunds can be issued directly through HubSpot. Once the Enrollment Team has the proper permissions, they can locate the payment record and issue a partial or full refund. The activity is automatically recorded in HubSpot.'},
+{keys:['existing ach customers','existing customers','legacy','transition','sunset'],answer:'Existing ACH customers can remain on current arrangements during the transition. The recommended approach is to move new ACH originations to HubSpot first, validate the process, and then gradually sunset Authorize.net ACH processing after historical transactions have settled.'},
+{keys:['statistics','overall statistics','transactions','832','1301'],answer:'Key transaction statistics from the knowledge base:\n\n1/4/24–5/12/26:\n• Total Authorize.net ACH Transactions: 832\n• Returned Transactions: 157, or 18.87%\n• Returned Items: 139, or 16.71%\n• Chargebacks: 18, or 2.16%\n\nAll-time:\n• Total Transactions: 1,301\n• Returned: 178, or 13.68%\n• Returned Items: 157, or 12.07%\n• Chargebacks: 21, or 1.61%'},
+{keys:['program','wharton','columbia','returns by program'],answer:'Returns by program in the knowledge base:\n\nWharton: 135 recorded returns, with the largest yearly count in 2025 at 63 returns.\n\nColumbia: 16 recorded returns, including 9 in 2025 Summer AIFB, 6 in 2025 Fall AIFB, and 1 in 2026 Spring AIFB.'},
+{keys:['no hubspot','missing hubspot','hubspot record','invisible'],answer:'The knowledge base identifies approximately 15–18 transactions totaling about $34,700 that have returns but no corresponding HubSpot contact record. These are described as invisible in the CRM.'}
 ];
-
-function normalize(s) { return s.toLowerCase().replace(/[^a-z0-9.%@$\s-]/g, ' '); }
-
-function findAnswer(q) {
-  const nq = normalize(q);
-  let best = null;
-  let bestScore = 0;
-  for (const item of ANSWERS) {
-    let score = 0;
-    for (const key of item.keys) {
-      const nk = normalize(key);
-      if (nq.includes(nk)) score += 10 + nk.length / 10;
-      else {
-        for (const word of nk.split(/\s+/).filter(w => w.length > 3)) {
-          if (nq.includes(word)) score += 1;
-        }
-      }
-    }
-    if (score > bestScore) { bestScore = score; best = item; }
-  }
-  if (best && bestScore >= 2) return best.answer + '
-
-Source: embedded WSP ACH migration knowledge base.';
-  return searchKnowledge(q);
+var fallback = 'I could not find a precise answer in the local knowledge base for that question. Try asking about return rates, NACHA thresholds, HubSpot Payments, failed payments, disputes/chargebacks, Authorize.net, refunds, SamCart, active payment issues, or migration risks.';
+var messages = document.getElementById('messages');
+var input = document.getElementById('user-input');
+var sendBtn = document.getElementById('send-btn');
+var clearBtn = document.getElementById('clear-btn');
+var chips = document.getElementById('chips');
+function addMsg(role,text){
+  var wrap=document.createElement('div'); wrap.className='msg '+role;
+  var av=document.createElement('div'); av.className='avatar'; av.textContent=role==='bot'?'✦':'↑';
+  var bub=document.createElement('div'); bub.className='bubble'; bub.textContent=text;
+  wrap.appendChild(av); wrap.appendChild(bub); messages.appendChild(wrap); messages.scrollTop=messages.scrollHeight;
 }
-
-function searchKnowledge(q) {
-  const terms = normalize(q).split(/\s+/).filter(w => w.length > 3 && !['what','when','where','does','with','from','about','there','their','would','could','should'].includes(w));
-  const sections = KNOWLEDGE.split(/
-
-+/).filter(Boolean);
-  const scored = sections.map(sec => {
-    const nsec = normalize(sec);
-    const score = terms.reduce((sum, t) => sum + (nsec.includes(t) ? 1 : 0), 0);
-    return { sec, score };
-  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0,3);
-  if (!scored.length) {
-    return `I don’t see that covered clearly in the embedded knowledge base. Try asking about return rates, return codes, failed payment recovery, HubSpot Payments workflows, ACH disputes, refunds, SamCart vs. HubSpot, or active unresolved payment cases.`;
-  }
-  return `I found the most relevant knowledge-base excerpt(s):
-
-` + scored.map(x => cleanSection(x.sec)).join('
-
----
-
-') + `
-
-Source: embedded WSP ACH migration knowledge base.`;
+function scoreAnswer(q,item){
+  var query=q.toLowerCase(); var score=0;
+  item.keys.forEach(function(k){ if(query.indexOf(k)>=0){ score += k.length>8 ? 3 : 2; }});
+  var words=query.split(/[^a-z0-9]+/).filter(function(w){return w.length>3});
+  item.keys.forEach(function(k){ words.forEach(function(w){ if(k.indexOf(w)>=0 || w.indexOf(k)>=0) score += 1; }); });
+  return score;
 }
-
-function cleanSection(sec) {
-  return sec.replace(/^=== /gm, '').replace(/ ===$/gm, '').trim();
+function answer(q){
+  var best=null,bestScore=0;
+  KB.forEach(function(item){ var s=scoreAnswer(q,item); if(s>bestScore){best=item;bestScore=s;} });
+  return bestScore>0 ? best.answer : fallback;
 }
-
-function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
-function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-function hideChips() { const w = document.getElementById('chips-wrap'); if (w) w.style.display = 'none'; }
-function sendChip(el) { hideChips(); processQuery(el.textContent.trim()); }
-function send() { const inp = document.getElementById('user-input'); const q = inp.value.trim(); if (!q) return; inp.value = ''; inp.style.height = 'auto'; hideChips(); processQuery(q); }
-function addMsg(role, text) {
-  const msgs = document.getElementById('messages');
-  const wrap = document.createElement('div'); wrap.className = 'msg ' + role;
-  const av = document.createElement('div'); av.className = 'avatar'; av.textContent = role === 'bot' ? '✦' : '↑';
-  const bub = document.createElement('div'); bub.className = 'bubble'; bub.textContent = text;
-  wrap.appendChild(av); wrap.appendChild(bub); msgs.appendChild(wrap); msgs.scrollTop = msgs.scrollHeight;
+function sendText(text){
+  var q=(text||'').trim(); if(!q) return;
+  addMsg('user',q); if(chips) chips.style.display='none';
+  window.setTimeout(function(){ addMsg('bot', answer(q)); }, 120);
 }
-function clearChat() {
-  history = [];
-  const msgs = document.getElementById('messages'); msgs.innerHTML = '';
-  addMsg('bot', 'Chat cleared. Ask me anything about the ACH migration or returns data.');
-  const chips = document.getElementById('chips-wrap'); if (chips) chips.style.display = 'flex';
-}
-function processQuery(q) {
-  addMsg('user', q);
-  const btn = document.getElementById('send-btn'); btn.disabled = true;
-  setTimeout(() => { addMsg('bot', findAnswer(q)); btn.disabled = false; document.getElementById('user-input').focus(); }, 250);
-}
+function send(){ sendText(input.value); input.value=''; input.style.height='44px'; input.focus(); }
+sendBtn.addEventListener('click', send);
+input.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
+input.addEventListener('input', function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'; });
+Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(btn){ btn.addEventListener('click', function(){ sendText(btn.textContent); }); });
+clearBtn.addEventListener('click', function(){ messages.innerHTML=''; if(chips) chips.style.display='flex'; addMsg('bot', intro); input.focus(); });
+var intro = 'Hi — I’m the WSP ACH Migration Assistant. This no-API version answers from the embedded ACH migration knowledge base using local keyword matching. Ask about return rates, NACHA thresholds, HubSpot Payments, Authorize.net, failed payment recovery, disputes, refunds, or active payment issues.';
+addMsg('bot', intro);
+input.focus();
+})();
 </script>
 </body>
 </html>
